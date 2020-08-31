@@ -38,7 +38,7 @@ namespace development_area
         
         void getPurityAndCompleteness(const pandora::PfoList *const Pfos, const pandora::MCParticleList *const MCParts, const pandora::CaloHitList *const CaloHits, std::vector<std::vector<float>> &pfoPurityCompleteness, LArMCParticleHelper::PrimaryParameters primaryParameters = ParticleHierarchyValidationAlgorithm::CreatePrimaryParameters());
         
-        std::vector<float> purityAndCompleteness(const pandora::ParticleFlowObject *const pPfo, const pandora::MCParticleList *const pMCParts, const pandora::CaloHitList *const CaloHits, LArMCParticleHelper::PrimaryParameters &primaryParameters);
+        std::vector<float> purityAndCompleteness(const pandora::ParticleFlowObject *const pPfo, const pandora::MCParticle *const c_MCPart, const pandora::MCParticleList *const pMCParts, const pandora::CaloHitList *const CaloHits, LArMCParticleHelper::PrimaryParameters &primaryParameters);
         
         const pandora::MCParticle* findBestMatch(const ParticleFlowObject *const pPfo, const MCParticleList *const MCParts, const CaloHitList *const CaloHits, LArMCParticleHelper::PrimaryParameters &primaryParameters);
         

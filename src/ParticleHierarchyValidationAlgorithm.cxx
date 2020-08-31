@@ -25,7 +25,7 @@ using namespace std;
 namespace development_area
 { 
     ParticleHierarchyValidationAlgorithm::ParticleHierarchyValidationAlgorithm():
-        m_writeToTree(true),
+        m_writeToTree(false),
         m_treeName("ElectronEventTree"),
         m_fileName("ElectronTree.root"),
         eventNo(0),
@@ -110,166 +110,13 @@ namespace development_area
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        /*
-            //Finding the number of hits in each PFO
-        MCParticleList matchedMCParticles;
-        
-        int PfoTempId(0);
-        int matched(0);
-        float c_PfoCompleteness(-1);
-        float c_PfoPurity(-1);
-        float c_PfoSharedHits(0);
-        float c_PfoEfficiency(0);
-        
-        for (const ParticleFlowObject *const c_Pfo : relevantPfos)
-        {
-            PfoTempId++;  
-            
-                //Looking at the purity and completeness of c_Pfo 
-            const MCParticle* bestMatch(nullptr);
-            std::vector<float> CandP = ParticleHierarchyValidationAlgorithm::purityAndCompleteness(c_Pfo, MCParts, CaloHits, m_primaryParameters);
-            bestMatch = findBestMatch(c_Pfo, MCParts, CaloHits, m_primaryParameters);
-            c_PfoCompleteness = CandP[0];
-            c_PfoPurity       = CandP[1];
-            c_PfoSharedHits   = CandP[2];
-            c_PfoEfficiency   = c_PfoCompleteness / c_PfoPurity; 
-            
-            //std::cout << "Purity      : " << c_PfoPurity << std::endl;
-            //std::cout << "Completeness: " << c_PfoCompleteness << std::endl;
-            //std::cout << "" << std::endl;
-            //std::cout << "bestMatchId: " << abs(bestMatch->GetParticleId()) << endl;
-            //std::cout << "PfoId      : " << abs(c_Pfo->GetParticleId()) << endl;
-            //std::cout << "" << std::endl;
-            
-            
-                    //by this point, we have found the relevant MCParticle and Pfo, so can find all the information to fill the table with
-                    //Lets now find the angle between the Muon and Michel Electron
-                //Origin and endpoint of the Electron
-            CartesianVector* resultant = new CartesianVector(0,0,0);
-            float michelAngle(-1.0);
-            float muonBeamAngle(-1.0);
-            float michelBeamAngle(-1.0);
-            if (abs(bestMatch->GetParticleId()) == 11)
-            {    
-                CartesianVector origin   = bestMatch->GetVertex();
-                CartesianVector endpoint = bestMatch->GetEndpoint();
-                //PANDORA_MONITORING_API(AddMarkerToVisualization(this->GetPandora(), &origin, "Electron Start", RED, 1));
-                //PANDORA_MONITORING_API(AddMarkerToVisualization(this->GetPandora(), &endpoint, "Electron End", RED, 1));
-                resultant = new CartesianVector(endpoint.GetX() - origin.GetX(), endpoint.GetY() - origin.GetY(), endpoint.GetZ() - origin.GetZ());
-                
-                const MCParticleList parentList = bestMatch->GetParentList();
-                const MCParticle* parent(nullptr);
-                bool found_parent = false;
-                for (const MCParticle* const c_parent : parentList)
-                {
-                    //std::cout << "PDG:" << abs(c_parent->GetParticleId()) << std::endl;
-                    if (abs(c_parent->GetParticleId()) == 13)
-                    {
-                        parent       = c_parent;
-                        found_parent = true;
-                        break;
-                    }
-                }
-                
-                if (found_parent)
-                {
-                    //std::cout << "parent:" << abs(parent->GetParticleId()) << std::endl;
-                    //std::cout << "" << std::endl;
-                
-                    CartesianVector* parentResultant = new CartesianVector(0,0,0);
-                    origin   = parent->GetVertex();
-                    endpoint = parent->GetEndpoint();
-                    //PANDORA_MONITORING_API(AddMarkerToVisualization(this->GetPandora(), &origin, "Muon Start", BLUE, 1));
-                    //PANDORA_MONITORING_API(AddMarkerToVisualization(this->GetPandora(), &endpoint, "Muon End", BLUE, 1));
-                    
-                    parentResultant = new CartesianVector(endpoint.GetX() - origin.GetX(), endpoint.GetY() - origin.GetY(), endpoint.GetZ() - origin.GetZ());
-                    //std::cout << parentResultant->GetX() << std::endl;
-                    
-                    //PANDORA_MONITORING_API(VisualizeParticleFlowObjects(this->GetPandora(), Pfos, "All Pfos", RED, true, true));
-                    //PANDORA_MONITORING_API(VisualizeMCParticles(this->GetPandora(), MCParts, "All MCParticles", BLUE));
-                    michelAngle = acos(resultant->GetCosOpeningAngle(*parentResultant)) * 180/(2*acos(0.0));    //Use M_PI later, if problems include cmath
-                    //std::cout << "michelAngle: " << michelAngle << std::endl;
-                    
-                    CartesianVector* beamDirection = new CartesianVector(0,0,1);
-                    muonBeamAngle   = acos( parentResultant->GetCosOpeningAngle(*beamDirection) ) * 180/(2*acos(0.0));
-                    michelBeamAngle = acos( resultant->GetCosOpeningAngle(*beamDirection) )       * 180/(2*acos(0.0));
-                }
-            }
-            //std::cout << resultant->GetX() << std::endl;
-            
-            
-            
-            
-            
-            
-            
-            
-            int c_PfoPDG = abs(bestMatch->GetParticleId());     //Give the PDG Code as the code of the best macthing MCParticle, not the Pfo itself
-            
-            int NUHits(0);
-            int NVHits(0);
-            int NWHits(0);
-            getMCParticleViewHits(bestMatch, NUHits, NVHits, NWHits, m_showAllMCPData, MCParts, CaloHits);
-            //getViewHits(c_Pfo, NUHits, NVHits, NWHits, m_showAllPfoData);
-            
-            matchedMCParticles.push_back(bestMatch);
-            
-            //std::cout << "5" << std::endl;
-            
-            if (m_writeToTree && c_PfoCompleteness >= 0.1 && c_PfoPurity >= 0.5 && (NUHits > 0 || NVHits > 0 || NWHits > 0)){
-                matched = 1;
-                c_PfoEfficiency = 0.0;
-                if (c_PfoPDG == 11)
-                {
-                    if (c_PfoSharedHits >= 5.0)
-                        c_PfoEfficiency = 1.0;
-                }
-                
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "eventNo", eventNo);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "MCPPDG", c_PfoPDG);  //PDG Code is note the be-all-end-all, need to also clarify if it has been given wrong code
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "Matched", matched);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "UHits", NUHits);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "VHits", NVHits);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "WHits", NWHits);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "michelAngle", michelAngle);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "michelBeamAngle", michelBeamAngle);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "muonBeamAngle", muonBeamAngle);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "Completeness", c_PfoCompleteness);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "Purity", c_PfoPurity);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "Efficiency", c_PfoEfficiency);
-                PandoraMonitoringApi::FillTree(this->GetPandora(), m_treeName.c_str());
-                
-                ///std::cout << "#  >>>PFO added to tree" << std::endl;
-            }else if (!(c_PfoCompleteness >= 0.1 && c_PfoPurity >= 0.5 && (NUHits >= 0 || NVHits >= 0 || NWHits >= 0))){
-                //std::cout << "Particle Rejected: " << std::endl;
-                //std::cout << "  C> " << c_PfoCompleteness << std::endl;
-                //std::cout << "  P> " << c_PfoPurity << std::endl;
-                //std::cout << "PDG> " << c_Pfo->GetParticleId() << std::endl;
-                //std::cout << "     " << std::endl;
-                //PANDORA_MONITORING_API(VisualizeParticleFlowObjects(this->GetPandora(), Pfos, "Problematic Pfos", RED, true, true));
-                //PANDORA_MONITORING_API(ViewEvent(this->GetPandora()));
-            }
-        }
-        */
-        
-        
-        
                     //########### NEW METHOD ###########
         for (const MCParticle *const c_MCPart : *MCParts)
         {  
             float c_PfoCompleteness(-1);
             float c_PfoPurity(-1);
             int c_PfoSharedHits(-1);
-            int c_PfoEfficiency(-1);
+            float c_PfoEfficiency(-1);
                
                 //Finding the hits per view 
             int NUHits(-1);
@@ -355,7 +202,7 @@ namespace development_area
             if (matchedPfo != nullptr)
             {
                     //Finding the Completeness, Purity and number of shared hits
-                std::vector<float> CandP = ParticleHierarchyValidationAlgorithm::purityAndCompleteness(matchedPfo, MCParts, CaloHits, m_primaryParameters);
+                std::vector<float> CandP = ParticleHierarchyValidationAlgorithm::purityAndCompleteness(matchedPfo, c_MCPart, MCParts, CaloHits, m_primaryParameters);
                 c_PfoCompleteness = CandP[0];
                 c_PfoPurity       = CandP[1];
                 c_PfoSharedHits   = CandP[2];
@@ -386,263 +233,8 @@ namespace development_area
             PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "Efficiency", c_PfoEfficiency);
             PandoraMonitoringApi::FillTree(this->GetPandora(), m_treeName.c_str());
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+  
             
-        
-
-        /*
-            //Finding the number of hits in each PFO
-        MCParticleList matchedMCParticles;
-        
-        int PfoTempId(0);
-        int matched(0);
-        float c_PfoCompleteness(-1);
-        float c_PfoPurity(-1);
-        float c_PfoSharedHits(0);
-        float c_PfoEfficiency(0);
-        
-        for (const ParticleFlowObject *const c_Pfo : relevantPfos)
-        {
-            PfoTempId++;  
-            
-                //Looking at the purity and completeness of c_Pfo 
-            const MCParticle* bestMatch(nullptr);
-            std::vector<float> CandP = ParticleHierarchyValidationAlgorithm::purityAndCompleteness(c_Pfo, MCParts, CaloHits, m_primaryParameters);
-            bestMatch = findBestMatch(c_Pfo, MCParts, CaloHits, m_primaryParameters);
-            c_PfoCompleteness = CandP[0];
-            c_PfoPurity       = CandP[1];
-            c_PfoSharedHits   = CandP[2];
-            c_PfoEfficiency   = c_PfoCompleteness / c_PfoPurity; 
-            
-            //std::cout << "Purity      : " << c_PfoPurity << std::endl;
-            //std::cout << "Completeness: " << c_PfoCompleteness << std::endl;
-            //std::cout << "" << std::endl;
-            //std::cout << "bestMatchId: " << abs(bestMatch->GetParticleId()) << endl;
-            //std::cout << "PfoId      : " << abs(c_Pfo->GetParticleId()) << endl;
-            //std::cout << "" << std::endl;
-            
-            
-                    //by this point, we have found the relevant MCParticle and Pfo, so can find all the information to fill the table with
-                    //Lets now find the angle between the Muon and Michel Electron
-                //Origin and endpoint of the Electron
-            CartesianVector* resultant = new CartesianVector(0,0,0);
-            float michelAngle(-1.0);
-            float muonBeamAngle(-1.0);
-            float michelBeamAngle(-1.0);
-            if (abs(bestMatch->GetParticleId()) == 11)
-            {    
-                CartesianVector origin   = bestMatch->GetVertex();
-                CartesianVector endpoint = bestMatch->GetEndpoint();
-                //PANDORA_MONITORING_API(AddMarkerToVisualization(this->GetPandora(), &origin, "Electron Start", RED, 1));
-                //PANDORA_MONITORING_API(AddMarkerToVisualization(this->GetPandora(), &endpoint, "Electron End", RED, 1));
-                resultant = new CartesianVector(endpoint.GetX() - origin.GetX(), endpoint.GetY() - origin.GetY(), endpoint.GetZ() - origin.GetZ());
-                
-                const MCParticleList parentList = bestMatch->GetParentList();
-                const MCParticle* parent(nullptr);
-                bool found_parent = false;
-                for (const MCParticle* const c_parent : parentList)
-                {
-                    //std::cout << "PDG:" << abs(c_parent->GetParticleId()) << std::endl;
-                    if (abs(c_parent->GetParticleId()) == 13)
-                    {
-                        parent       = c_parent;
-                        found_parent = true;
-                        break;
-                    }
-                }
-                
-                if (found_parent)
-                {
-                    //std::cout << "parent:" << abs(parent->GetParticleId()) << std::endl;
-                    //std::cout << "" << std::endl;
-                
-                    CartesianVector* parentResultant = new CartesianVector(0,0,0);
-                    origin   = parent->GetVertex();
-                    endpoint = parent->GetEndpoint();
-                    //PANDORA_MONITORING_API(AddMarkerToVisualization(this->GetPandora(), &origin, "Muon Start", BLUE, 1));
-                    //PANDORA_MONITORING_API(AddMarkerToVisualization(this->GetPandora(), &endpoint, "Muon End", BLUE, 1));
-                    
-                    parentResultant = new CartesianVector(endpoint.GetX() - origin.GetX(), endpoint.GetY() - origin.GetY(), endpoint.GetZ() - origin.GetZ());
-                    //std::cout << parentResultant->GetX() << std::endl;
-                    
-                    //PANDORA_MONITORING_API(VisualizeParticleFlowObjects(this->GetPandora(), Pfos, "All Pfos", RED, true, true));
-                    //PANDORA_MONITORING_API(VisualizeMCParticles(this->GetPandora(), MCParts, "All MCParticles", BLUE));
-                    michelAngle = acos(resultant->GetCosOpeningAngle(*parentResultant)) * 180/(2*acos(0.0));    //Use M_PI later, if problems include cmath
-                    //std::cout << "michelAngle: " << michelAngle << std::endl;
-                    
-                    CartesianVector* beamDirection = new CartesianVector(0,0,1);
-                    muonBeamAngle   = acos( parentResultant->GetCosOpeningAngle(*beamDirection) ) * 180/(2*acos(0.0));
-                    michelBeamAngle = acos( resultant->GetCosOpeningAngle(*beamDirection) )       * 180/(2*acos(0.0));
-                }
-            }
-            //std::cout << resultant->GetX() << std::endl;
-            
-            
-            
-            
-            
-            
-            
-            
-            int c_PfoPDG = abs(bestMatch->GetParticleId());     //Give the PDG Code as the code of the best macthing MCParticle, not the Pfo itself
-            
-            int NUHits(0);
-            int NVHits(0);
-            int NWHits(0);
-            getMCParticleViewHits(bestMatch, NUHits, NVHits, NWHits, m_showAllMCPData, MCParts, CaloHits);
-            //getViewHits(c_Pfo, NUHits, NVHits, NWHits, m_showAllPfoData);
-            
-            matchedMCParticles.push_back(bestMatch);
-            
-            //std::cout << "5" << std::endl;
-            
-            if (m_writeToTree && c_PfoCompleteness >= 0.1 && c_PfoPurity >= 0.5 && (NUHits > 0 || NVHits > 0 || NWHits > 0)){
-                matched = 1;
-                c_PfoEfficiency = 0.0;
-                if (c_PfoPDG == 11)
-                {
-                    if (c_PfoSharedHits >= 5.0)
-                        c_PfoEfficiency = 1.0;
-                }
-                
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "eventNo", eventNo);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "MCPPDG", c_PfoPDG);  //PDG Code is note the be-all-end-all, need to also clarify if it has been given wrong code
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "Matched", matched);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "UHits", NUHits);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "VHits", NVHits);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "WHits", NWHits);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "michelAngle", michelAngle);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "michelBeamAngle", michelBeamAngle);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "muonBeamAngle", muonBeamAngle);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "Completeness", c_PfoCompleteness);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "Purity", c_PfoPurity);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "Efficiency", c_PfoEfficiency);
-                PandoraMonitoringApi::FillTree(this->GetPandora(), m_treeName.c_str());
-                
-                ///std::cout << "#  >>>PFO added to tree" << std::endl;
-            }else if (!(c_PfoCompleteness >= 0.1 && c_PfoPurity >= 0.5 && (NUHits >= 0 || NVHits >= 0 || NWHits >= 0))){
-                //std::cout << "Particle Rejected: " << std::endl;
-                //std::cout << "  C> " << c_PfoCompleteness << std::endl;
-                //std::cout << "  P> " << c_PfoPurity << std::endl;
-                //std::cout << "PDG> " << c_Pfo->GetParticleId() << std::endl;
-                //std::cout << "     " << std::endl;
-                //PANDORA_MONITORING_API(VisualizeParticleFlowObjects(this->GetPandora(), Pfos, "Problematic Pfos", RED, true, true));
-                //PANDORA_MONITORING_API(ViewEvent(this->GetPandora()));
-            }
-        }
-        
-        
-        
-        for (const MCParticle *const c_MCPart : *MCParts)
-        {
-            int NUHits(0);
-            int NVHits(0);
-            int NWHits(0);
-            getMCParticleViewHits(c_MCPart, NUHits, NVHits, NWHits, m_showAllMCPData, MCParts, CaloHits);
-            
-            int MCPId = abs(c_MCPart->GetParticleId());
-            
-            bool found(false);
-            for (const MCParticle *const c_matchedMCPart : matchedMCParticles)
-            {
-                if (c_matchedMCPart == c_MCPart)
-                {
-                    found = true;
-                    break;
-                }
-            }
-            if (m_writeToTree && !found)
-            {
-                CartesianVector* resultant = new CartesianVector(0,0,0);
-                float michelAngle(-1.0);
-                float muonBeamAngle(-1.0);
-                float michelBeamAngle(-1.0);
-                if (abs(c_MCPart->GetParticleId()) == 11)
-                {    
-                    CartesianVector origin   = c_MCPart->GetVertex();
-                    CartesianVector endpoint = c_MCPart->GetEndpoint();
-                    //PANDORA_MONITORING_API(AddMarkerToVisualization(this->GetPandora(), &origin, "Electron Start", RED, 1));
-                    //PANDORA_MONITORING_API(AddMarkerToVisualization(this->GetPandora(), &endpoint, "Electron End", RED, 1));
-                    resultant = new CartesianVector(endpoint.GetX() - origin.GetX(), endpoint.GetY() - origin.GetY(), endpoint.GetZ() - origin.GetZ());
-                    
-                    const MCParticleList parentList = c_MCPart->GetParentList();
-                    const MCParticle* parent(nullptr);
-                    bool found_parent = false;
-                    for (const MCParticle* const c_parent : parentList)
-                    {
-                        //std::cout << "PDG:" << abs(c_parent->GetParticleId()) << std::endl;
-                        if (abs(c_parent->GetParticleId()) == 13)
-                        {
-                            parent       = c_parent;
-                            found_parent = true;
-                            break;
-                        }
-                    }
-                    
-                    if (found_parent)
-                    {
-                        //std::cout << "parent:" << abs(parent->GetParticleId()) << std::endl;
-                        //std::cout << "" << std::endl;
-                    
-                        CartesianVector* parentResultant = new CartesianVector(0,0,0);
-                        origin   = parent->GetVertex();
-                        endpoint = parent->GetEndpoint();
-                        //PANDORA_MONITORING_API(AddMarkerToVisualization(this->GetPandora(), &origin, "Muon Start", BLUE, 1));
-                        //PANDORA_MONITORING_API(AddMarkerToVisualization(this->GetPandora(), &endpoint, "Muon End", BLUE, 1));
-                        
-                        parentResultant = new CartesianVector(endpoint.GetX() - origin.GetX(), endpoint.GetY() - origin.GetY(), endpoint.GetZ() - origin.GetZ());
-                        //std::cout << parentResultant->GetX() << std::endl;
-                        
-                        //PANDORA_MONITORING_API(VisualizeParticleFlowObjects(this->GetPandora(), Pfos, "All Pfos", RED, true, true));
-                        //PANDORA_MONITORING_API(VisualizeMCParticles(this->GetPandora(), MCParts, "All MCParticles", BLUE));
-                        michelAngle = acos(resultant->GetCosOpeningAngle(*parentResultant)) * 180/(2*acos(0.0));    //Use M_PI later, if problems include cmath
-                        //std::cout << "michelAngle: " << michelAngle << std::endl;
-                        
-                        
-                        CartesianVector* beamDirection = new CartesianVector(0,0,1);
-                        muonBeamAngle   = acos( parentResultant->GetCosOpeningAngle(*beamDirection) ) * 180/(2*acos(0.0));
-                        michelBeamAngle = acos( resultant->GetCosOpeningAngle(*beamDirection) )       * 180/(2*acos(0.0));
-                    }
-                }
-                //std::cout << resultant->GetX() << std::endl;
-                
-                PfoTempId         = -1;
-                matched           =  0;
-                c_PfoCompleteness = -1;
-                c_PfoPurity       = -1;
-                c_PfoEfficiency   =  0;
-                
-                //std::cout << "  >Missed MCParticle: " << MCPId << std::endl;
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "eventNo", eventNo);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "MCPPDG", MCPId);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "Matched", matched);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "UHits", NUHits);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "VHits", NVHits);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "WHits", NWHits);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "michelAngle", michelAngle);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "michelBeamAngle", michelBeamAngle);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "muonBeamAngle", muonBeamAngle);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "Completeness", c_PfoCompleteness);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "Purity", c_PfoPurity);
-                PandoraMonitoringApi::SetTreeVariable(this->GetPandora(), m_treeName.c_str(), "Efficiency", c_PfoEfficiency);
-                PandoraMonitoringApi::FillTree(this->GetPandora(), m_treeName.c_str());
-            }
-
-        }
-        */
         
         return STATUS_CODE_SUCCESS;
     }
@@ -663,9 +255,9 @@ namespace development_area
     
     void ParticleHierarchyValidationAlgorithm::getPurityAndCompleteness(const PfoList *const pPfoList, const MCParticleList *const pMCParts, const CaloHitList *const pCaloHits, std::vector<std::vector<float>> &pfoPurityCompleteness, LArMCParticleHelper::PrimaryParameters primaryParameters){
         for (const ParticleFlowObject *const pPfo : *pPfoList){
-            //const MCParticle* bestMatch(nullptr);
-            //bestMatch = findBestMatch(pPfo, pMCParts, pCaloHits, primaryParameters);
-            std::vector<float> results = ParticleHierarchyValidationAlgorithm::purityAndCompleteness(pPfo, pMCParts, pCaloHits, primaryParameters);
+            const MCParticle* bestMatch(nullptr);
+            bestMatch = findBestMatch(pPfo, pMCParts, pCaloHits, primaryParameters);
+            std::vector<float> results = ParticleHierarchyValidationAlgorithm::purityAndCompleteness(pPfo, bestMatch, pMCParts, pCaloHits, primaryParameters);
             pfoPurityCompleteness.push_back(results);
             //std::cout << "Added to the pfoPurityCompleteness Object" << std::endl; 
         }
@@ -816,7 +408,7 @@ namespace development_area
     }
     
     
-    /*
+    
     std::vector<float> ParticleHierarchyValidationAlgorithm::purityAndCompleteness(const ParticleFlowObject *const pPfo, const MCParticle* bestMCParticle, const MCParticleList *const MCParts, const CaloHitList *const CaloHits, LArMCParticleHelper::PrimaryParameters &primaryParameters){
         const PfoList myPfoList(1, pPfo);
             
@@ -856,7 +448,6 @@ namespace development_area
         std::vector<float> return_vec = {completeness, purity, (float)nHitsSharedWithBestMCParticleTotal};
         return return_vec;
     }
-    */
     
     
     
@@ -864,6 +455,7 @@ namespace development_area
     
     
     
+    /*    WORKING
     
     std::vector<float> ParticleHierarchyValidationAlgorithm::purityAndCompleteness(const ParticleFlowObject *const pPfo, const MCParticleList *const pMCParts, const CaloHitList *const CaloHits, LArMCParticleHelper::PrimaryParameters &primaryParameters){
         const PfoList myPfoList(1, pPfo);
@@ -939,6 +531,7 @@ namespace development_area
         return return_vec;
     }
     
+    */
     
     
     
